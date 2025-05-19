@@ -1,48 +1,95 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const motd = document.getElementById('motd'); // Input area
-    const colorPicker = document.getElementById('color-picker'); // Color picker
-    const copyOutput = document.getElementById('copy-output'); // Output area
-    const copyBtn = document.getElementById('copy-btn'); // Copy button
-    const clearBtn = document.getElementById('clear-btn'); // Clear button
-    const darkModeToggle = document.getElementById('toggle-dark-mode'); // Dark mode toggle
-    
-    // Apply color to selected text in input (only HTML span style here)
-    document.getElementById('apply-btn').addEventListener('click', function () {
-        const selectedText = window.getSelection().toString();
-        if (selectedText) {
-            const color = colorPicker.value;
-            const replacement = `<span style="color:${color}">${selectedText}</span>`;
-            replaceSelectedText(replacement);
-            updateOutput();
-        }
-    });
+    // DOM Elements
+    const motd = document.getElementById('motd');
+    const colorPicker = document.getElementById('color-picker');
+    const copyOutput = document.getElementById('copy-output');
+    const copyBtn = document.getElementById('copy-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+    const presetContainer = document.querySelector('.preset-container');
+    const applyBtn = document.getElementById('apply-btn');
+    const charCounter = document.getElementById('char-counter');
+    const previewArea = document.getElementById('preview-area');
+    const copiedAlert = document.getElementById('copied-alert');
 
-    // Clear content in input
-    clearBtn.addEventListener('click', function () {
-        motd.innerHTML = '';
+    // Constants
+    const MAX_CHARS = 1000;
+    const ESO_COLOR_PRESETS = [
+        { color: '#FF0000', name: 'Red' },
+        { color: '#00FF00', name: 'Green' },
+        { color: '#0000FF', name: 'Blue' },
+        { color: '#FFFF00', name: 'Yellow' },
+        { color: '#FF00FF', name: 'Magenta' },
+        { color: '#00FFFF', name: 'Cyan' },
+        { color: '#FFFFFF', name: 'White' },
+        { color: '#FFA500', name: 'Orange' },
+        { color: '#800080', name: 'Purple' },
+        { color: '#FFC0CB', name: 'Pink' }
+    ];
+
+    // Sticky color variable
+    let lastSelectedColor = null; // Start as null to avoid |cffffff...|r on first input
+
+    // Initialize
+    init();
+
+    // Functions
+    function init() {
+        createColorPresets();
         updateOutput();
-    });
+        updateCharCounter();
 
-    // Update output with ESO color codes
-    function updateOutput() {
-        let htmlContent = motd.innerHTML;
+        // Load dark mode preference from localStorage
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+        }
 
-        // Convert <span> color styling into ESO color codes (only for output)
-        htmlContent = htmlContent.replace(/<span style="color:(#[0-9a-fA-F]{6})">(.*?)<\/span>/g, function (match, p1, p2) {
-            const hexColor = p1.substring(1); // Remove '#' from hex color
-            return `|c${hexColor}${p2}|r`; // Format it as ESO color code
-        });
+        // Update theme icon based on current mode
+        updateThemeIcon(isDarkMode);
 
-        // Replace <br> with newline
-        htmlContent = htmlContent.replace(/<br>/g, '\n'); 
-        // Remove <div> and </div> tags and replace them with newlines
-        htmlContent = htmlContent.replace(/<div>/g, '').replace(/<\/div>/g, '\n'); 
-
-        // Set the formatted output to the copy-output area
-        copyOutput.textContent = htmlContent;
+        // Set initial color
+        colorPicker.value = '#FFFFFF';
     }
 
-    // Replace selected text in input area with formatted HTML
+    function createColorPresets() {
+        ESO_COLOR_PRESETS.forEach(preset => {
+            const presetElement = document.createElement('div');
+            presetElement.className = 'color-preset';
+            presetElement.style.backgroundColor = preset.color;
+            presetElement.title = preset.name;
+
+            // When a preset is clicked, set color picker and make it sticky for new input
+            presetElement.addEventListener('click', () => {
+                colorPicker.value = preset.color;
+                lastSelectedColor = preset.color;
+                if (document.activeElement === motd) {
+                    document.execCommand('foreColor', false, preset.color);
+                }
+            });
+
+            presetContainer.appendChild(presetElement);
+        });
+
+        // Color picker applies color at caret if motd is focused, and makes it sticky
+        colorPicker.addEventListener('input', () => {
+            lastSelectedColor = colorPicker.value;
+            if (document.activeElement === motd) {
+                document.execCommand('foreColor', false, colorPicker.value);
+            }
+        });
+
+        // When motd is focused, always apply the last selected color at caret (if any)
+        motd.addEventListener('focus', function() {
+            setTimeout(() => {
+                if (lastSelectedColor) {
+                    document.execCommand('foreColor', false, lastSelectedColor);
+                }
+            }, 0);
+        });
+    }
+
     function replaceSelectedText(replacementText) {
         const selection = window.getSelection();
         if (selection.rangeCount) {
@@ -59,19 +106,154 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Copy ESO-formatted output to clipboard
-    copyBtn.addEventListener('click', function () {
+    function updateOutput() {
+        let htmlContent = motd.innerHTML;
+
+        // Recursively convert all <span style="color:...">...</span> to ESO color codes
+        let spanRegex = /<span style="color:(#[0-9a-fA-F]{6})">(.*?)<\/span>/gs;
+        while (spanRegex.test(htmlContent)) {
+            htmlContent = htmlContent.replace(spanRegex, function (match, p1, p2) {
+                const hexColor = p1.substring(1);
+                return `|c${hexColor}${p2}|r`;
+            });
+        }
+
+        // Recursively convert all <font color="...">...</font> to ESO color codes
+        let fontRegex = /<font color="(#[0-9a-fA-F]{6})">(.*?)<\/font>/gs;
+        while (fontRegex.test(htmlContent)) {
+            htmlContent = htmlContent.replace(fontRegex, function (match, p1, p2) {
+                const hexColor = p1.substring(1);
+                return `|c${hexColor}${p2}|r`;
+            });
+        }
+
+        // Replace &nbsp; with normal space
+        htmlContent = htmlContent.replace(/&nbsp;/g, ' ');
+
+        // Replace <br> with newline
+        htmlContent = htmlContent.replace(/<br>/g, '\n');
+
+        // Remove <div> and </div> tags and replace them with newlines
+        htmlContent = htmlContent.replace(/<div>/g, '').replace(/<\/div>/g, '\n');
+
+        // Remove ESO color codes that wrap only spaces
+        htmlContent = htmlContent.replace(/\|c[0-9a-fA-F]{6}(\s+)\|r/g, '$1');
+
+        // Set the formatted output to the copy-output area
+        copyOutput.textContent = htmlContent;
+
+        // Update the preview
+        updatePreview();
+    }
+
+    function updateCharCounter() {
+        // Get plain text content (without HTML tags) for character counting
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = motd.innerHTML;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        const charCount = textContent.length;
+
+        charCounter.textContent = `Characters: ${charCount}/${MAX_CHARS}`;
+
+        // Add warning class if approaching limit
+        if (charCount > MAX_CHARS * 0.9) {
+            charCounter.classList.add('text-danger');
+        } else {
+            charCounter.classList.remove('text-danger');
+        }
+    }
+
+    function updatePreview() {
+        // Clone the editor content for the preview
+        previewArea.innerHTML = motd.innerHTML;
+    }
+
+    function copyToClipboard() {
         const output = copyOutput.textContent;
-        navigator.clipboard.writeText(output).then(() => {
-            alert('Copied to clipboard!');
-        });
+        navigator.clipboard.writeText(output)
+            .then(() => {
+                showCopiedAlert();
+            })
+            .catch(err => {
+                console.error('Could not copy text: ', err);
+                alert('Failed to copy to clipboard. Please try again.');
+            });
+    }
+
+    function showCopiedAlert() {
+        copiedAlert.style.display = 'block';
+        copiedAlert.style.opacity = '1';
+
+        setTimeout(() => {
+            copiedAlert.style.opacity = '0';
+            setTimeout(() => {
+                copiedAlert.style.display = 'none';
+            }, 300);
+        }, 2000);
+    }
+
+    function clearContent() {
+        motd.innerHTML = '';
+        updateOutput();
+        updateCharCounter();
+    }
+
+    function toggleDarkMode() {
+        const isDarkMode = document.body.classList.toggle('dark-mode');
+
+        // Save preference to localStorage
+        localStorage.setItem('darkMode', isDarkMode);
+
+        // Update icon
+        updateThemeIcon(isDarkMode);
+    }
+
+    function updateThemeIcon(isDarkMode) {
+        if (isDarkMode) {
+            themeIcon.className = 'fas fa-sun';
+        } else {
+            themeIcon.className = 'fas fa-moon';
+        }
+    }
+
+    // Event Listeners
+    applyBtn.addEventListener('click', applyColorToSelection);
+
+    copyBtn.addEventListener('click', copyToClipboard);
+
+    clearBtn.addEventListener('click', clearContent);
+
+    themeToggle.addEventListener('click', toggleDarkMode);
+
+    motd.addEventListener('input', function() {
+        updateOutput();
+        updateCharCounter();
     });
 
-    // Toggle dark mode
-    darkModeToggle.addEventListener('click', function () {
-        document.body.classList.toggle('dark-mode');
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(event) {
+        // Ctrl+C in the output area
+        if (event.ctrlKey && event.key === 'c' && document.activeElement === copyOutput) {
+            copyToClipboard();
+        }
+
+        // Shortcuts for color application (Ctrl+Shift+C)
+        if (event.ctrlKey && event.shiftKey && event.key === 'C') {
+            applyColorToSelection();
+            event.preventDefault();
+        }
     });
 
-    // Update output on any change in the MOTD (input area)
-    motd.addEventListener('input', updateOutput);
+    // Helper: Apply color to selection (if any)
+    function applyColorToSelection() {
+        const selectedText = window.getSelection().toString();
+        if (selectedText && selectedText.trim().length > 0) {
+            const color = colorPicker.value;
+            const replacement = `<span style="color:${color}">${selectedText}</span>`;
+            replaceSelectedText(replacement);
+            updateOutput();
+            updateCharCounter();
+            updatePreview();
+        }
+    }
 });
