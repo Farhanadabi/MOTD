@@ -193,9 +193,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function clearContent() {
+        // Clear the MOTD editor
         motd.innerHTML = '';
-        updateOutput();
+
+        // Reset color picker to default (white)
+        colorPicker.value = '#FFFFFF';
+
+        // Reset last selected color
+        lastSelectedColor = null;
+
+        // Optionally, reset preview and output areas
+        copyOutput.textContent = 'Your formatted message will appear here...';
+        previewArea.innerHTML = '';
+
+        // Reset character counter
         updateCharCounter();
+
+        // Update output
+        updateOutput();
     }
 
     function toggleDarkMode() {
