@@ -1,66 +1,314 @@
+/* Main Styles */
+:root {
+    --bg-color: #f8f8f2;
+    --container-bg: #f4f4fa;
+    --text-color: #282a36;
+    --border-color: #bd93f9;
+    --input-bg: #ffffff;
+    --output-bg: #ececfb;
+    --box-shadow: 0 0 10px rgba(189, 147, 249, 0.08);
+    --card-border: #bd93f9;
+    --card-header-bg: #ececfb;
+    --btn-bg: #bd93f9;
+    --btn-bg-hover: #a382e5;
+    --btn-text: #fff;
+    --alert-text: #282a36;
+}
+
 /* Default Light Mode Styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
-    background-color: #fff;
+    background-color: var(--container-bg);
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--box-shadow);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 #motd, pre#copy-output {
     height: 150px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     padding: 10px;
     border-radius: 4px;
     overflow-y: auto;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 pre#copy-output {
-    background-color: #e9ecef;
+    background-color: var(--output-bg);
     white-space: pre-wrap;
+    word-break: break-word;
 }
 
-button {
+button,
+.btn,
+.btn-group button {
+    border-radius: 999px !important;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+button:hover,
+.btn:hover,
+.btn-group button:hover {
+    background-color: var(--btn-bg-hover);
+    color: var(--btn-text);
+    opacity: 0.95;
+}
+
+.btn-group button,
+button + button,
+.btn + .btn {
+    margin-left: 8px;
+}
+
+.btn-group {
+    gap: 8px;
+}
+
+/* For vertical stacking on mobile, keep gap */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .btn-group button,
+    button + button,
+    .btn + .btn {
+        margin-left: 0;
+        margin-top: 8px;
+    }
+}
+
+.card {
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    border-color: var(--card-border);
+}
+
+.card-header {
+    background-color: var(--card-header-bg);
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Color presets styling */
+.color-presets {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.color-title {
+    margin-right: 10px;
+}
+
+.preset-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.color-preset {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--border-color);
+    transition: transform 0.2s;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8em;
+    color: #777;
+}
+
+/* Preview Area */
+#preview-area {
+    min-height: 100px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Copied Alert */
+.copied-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
     padding: 10px 20px;
     border-radius: 4px;
-    cursor: pointer;
-}
-
-button:hover {
-    opacity: 0.9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    display: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 /* Dark Mode Styles */
 body.dark-mode {
-    background-color: #121212;
-    color: #ffffff;
+    --bg-color: #282a36;
+    --container-bg: #282a36;
+    --text-color: #f8f8f2;
+    --border-color: #44475a;
+    --input-bg: #44475a;
+    --output-bg: #44475a;
+    --box-shadow: 0 0 10px rgba(80, 250, 123, 0.1);
+    --card-border: #44475a;
+    --card-header-bg: #343746;
+    --btn-bg: #6272a4;
+    --btn-bg-hover: #44475a;
+    --btn-text: #f8f8f2;
+    --alert-text: #f8f8f2;
 }
 
-body.dark-mode .container {
-    background-color: #2c2c2c;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+body.dark-mode .btn {
+    color: var(--btn-text);
 }
 
-body.dark-mode #motd, body.dark-mode pre#copy-output {
-    border: 1px solid #555;
-    background-color: #333;
-    color: #ddd;
+body.dark-mode .alert {
+    background-color: #343a40;
+    color: var(--alert-text);
+    border-color: #454d55;
 }
 
-body.dark-mode button {
-    background-color: #444;
-    color: #ddd;
+/* Ensure Bootstrap components respect dark mode */
+body.dark-mode .form-control {
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
 }
 
-body.dark-mode button:hover {
-    background-color: #666;
+body.dark-mode .card {
+    background-color: var(--container-bg);
 }
+
+body.dark-mode .text-dark {
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .char-counter {
+    color: #aaa;
+}
+
+body.dark-mode,
+body.dark-mode .container,
+body.dark-mode .card,
+body.dark-mode .card-header,
+body.dark-mode #motd,
+body.dark-mode pre#copy-output,
+body.dark-mode #preview-area,
+body.dark-mode button,
+body.dark-mode .copied-alert,
+body.dark-mode .color-title,
+body.dark-mode .char-counter {
+    background-color: var(--container-bg) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode #motd,
+body.dark-mode #preview-area {
+    background-color: var(--input-bg) !important;
+}
+
+body.dark-mode pre#copy-output {
+    background-color: var(--output-bg) !important;
+}
+
+body.dark-mode .copied-alert {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+/* If you use .btn-group or .btn, add: */
+body.dark-mode .btn,
+body.dark-mode .btn-group button {
+    background-color: var(--btn-bg) !important;
+    color: var(--btn-text) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .btn:hover,
+body.dark-mode .btn-group button:hover {
+    background-color: var(--btn-bg-hover) !important;
+    color: var(--btn-text) !important;
+    opacity: 0.95;
+}
+
+body.dark-mode .copied-alert {
+    background-color: #50fa7b !important;
+    color: #282a36 !important;
+}
+
+/* The page corner icon */
+.corner-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--container-bg);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    border: 1px solid var(--border-color);
+}
+
+.corner-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Transitions for smooth dark mode toggle */
+body, .container, .card, .card-header, #motd, pre#copy-output, #preview-area, button {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-group button {
+        width: 100%;
+    }
+}
+
