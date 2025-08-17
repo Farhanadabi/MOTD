@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://farhanadabi.github.io/MOTD/sitemap.xml
